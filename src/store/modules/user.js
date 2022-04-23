@@ -29,18 +29,18 @@ const mutations = {
 
 const actions = {
   // user login
-  login({ commit }, userInfo) {
+  async login({ commit }, userInfo) {
     const { username, password } = userInfo
-    return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
-        const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
-    })
+    const result = await login({ username: username.trim(), password: password })
+    if (result.code === 20000) {
+      console.log('ssss', data)
+      const { data } = result
+      commit('SET_TOKEN', data.token)
+      setToken(data.token)
+      return 'OK'
+    } else {
+      Promise.reject(new Error('failed'))
+    }
   },
 
   // get user info
