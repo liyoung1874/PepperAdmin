@@ -2,7 +2,7 @@
  * @Author: LF
  * @Date: 2022-04-23 14:58:03
  * @LastEditors: LF
- * @LastEditTime: 2022-04-23 18:31:37
+ * @LastEditTime: 2022-04-25 10:22:04
  * @Description: file content
  * @FilePath: \PepperAdmin\src\views\product\brand.vue
 -->
@@ -12,6 +12,7 @@
       type="primary"
       icon="el-icon-plus"
       style="margin-bottom: 15px"
+      @click="handelClickEditOrAdd(true,null)"
     >添加</el-button>
     <el-table :data="list" style="100%" border>
       <el-table-column
@@ -33,7 +34,7 @@
             type="warning"
             size="small"
             icon="el-icon-edit"
-            @click="handelClickEdit(row)"
+            @click="handelClickEditOrAdd(false,row)"
           >编辑</el-button>
           <el-button
             type="danger"
@@ -54,25 +55,62 @@
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
     />
+    <!-- 新增、编辑品牌的弹窗 -->
+    <el-dialog
+      :title="isAdd === true ? '新增品牌' : '编辑品牌'"
+      :visible.sync="dialogFormVisible"
+      align="center"
+    >
+      <el-form :model="brand" style="width:80%">
+        <el-form-item label="品牌名称" label-width="100px">
+          <el-input v-model="brand.tmName" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="品牌logo" label-width="100px" align="left">
+          <el-upload
+            class="avatar-uploader"
+            :action="uploadPath"
+            :show-file-list="false"
+            :on-success="handleAvatarSuccess"
+            :before-upload="beforeAvatarUpload"
+          >
+            <img v-if="brand.logoUrl" :src="brand.logoUrl" class="avatar">
+            <i v-else class="el-icon-plus avatar-uploader-icon" />
+          </el-upload>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleClickSubmit">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { reqBrandGetList, reqBrandDeleteById } from '@/api/product'
+import { reqBrandGetList, reqBrandDeleteById, reqBrandCreate, reqBrandEdit } from '@/api/product'
 export default {
   name: 'Brand',
   data() {
     return {
       list: [],
       page: 1,
-      limit: 30,
-      totalCount: 0
+      limit: 15,
+      totalCount: 0,
+      dialogFormVisible: false,
+      isAdd: null,
+      brand: {
+        id: '',
+        logoUrl: '',
+        tmName: ''
+      },
+      uploadPath: 'http://39.98.123.211/admin/product/upload'
     }
   },
   mounted() {
     this.getList()
   },
   methods: {
+    // 获取数据
     async getList() {
       const { page, limit } = this
       const result = await reqBrandGetList(page, limit)
@@ -82,19 +120,31 @@ export default {
         this.totalCount = data.total
       }
     },
+    // 修改每页数量
     handleSizeChange(size) {
-      //
       this.limit = size
       this.getList()
     },
+    // 跳页
     handleCurrentChange(page) {
-      //
       this.page = page
       this.getList()
     },
-    handelClickEdit(obj) {
-      //
+    // 点击新增、编辑按钮
+    handelClickEditOrAdd(type, obj) {
+      this.dialogFormVisible = true
+      this.isAdd = type
+      if (!type) {
+        this.brand = { ...obj }
+      } else {
+        this.brand = {
+          id: '',
+          logoUrl: '',
+          tmName: ''
+        }
+      }
     },
+    // 点击删除
     async handelClickDelete(id) {
       const result = await reqBrandDeleteById(id)
       if (result.code === 200) {
@@ -112,10 +162,84 @@ export default {
           type: 'warning'
         })
       }
+    },
+    // 新增、编辑点击提交
+    async handleClickSubmit() {
+      const { brand, isAdd } = this
+      let result = { code: '' }
+      if (brand.logoUrl && brand.tmName) {
+        if (isAdd) {
+          result = await reqBrandCreate(brand)
+        } else {
+          if (brand.id) {
+            result = await reqBrandEdit(brand)
+          }
+        }
+      } else {
+        this.$message({
+          message: '请填写品牌名称、上传品牌logo',
+          type: 'warning'
+        })
+      }
+      if (result.code === 200) {
+        this.$message({
+          message: '操作成功',
+          type: 'success'
+        })
+        this.getList()
+        this.dialogFormVisible = false
+      }
+    },
+    // 图片上传成功
+    handleAvatarSuccess(res, file) {
+      const { code, data } = res
+      if (code === 200) {
+        this.brand.logoUrl = data
+      }
+    },
+    // 验证图片上传
+    beforeAvatarUpload(file) {
+      const isJPGorPNG = file.type === 'image/jpeg' || 'image/png'
+      const isLt2M = file.size / 1024 / 1024 < 2
+
+      if (!isJPGorPNG) {
+        this.$message.error('上传头像图片只能是 JPG、PNG 格式!')
+      }
+      if (!isLt2M) {
+        this.$message.error('上传头像图片大小不能超过 2MB!')
+      }
+      return isJPGorPNG && isLt2M
     }
   }
 }
 </script>
+
+<style>
+/* 上传组件的样式 */
+  .avatar-uploader .el-upload {
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .avatar-uploader .el-upload:hover {
+    border-color: #409EFF;
+  }
+  .avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 178px;
+    height: 178px;
+    line-height: 178px;
+    text-align: center;
+  }
+  .avatar {
+    width: 178px;
+    height: 178px;
+    display: block;
+  }
+</style>
 
 <style lang='scss' scoped>
 </style>
