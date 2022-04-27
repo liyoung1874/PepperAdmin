@@ -2,7 +2,7 @@
  * @Author: LF
  * @Date: 2022-04-23 14:58:03
  * @LastEditors: LF
- * @LastEditTime: 2022-04-25 10:22:04
+ * @LastEditTime: 2022-04-27 08:59:22
  * @Description: file content
  * @FilePath: \PepperAdmin\src\views\product\brand.vue
 -->
@@ -12,7 +12,7 @@
       type="primary"
       icon="el-icon-plus"
       style="margin-bottom: 15px"
-      @click="handelClickEditOrAdd(true,null)"
+      @click="handelClickEditOrAdd(true, null)"
     >添加</el-button>
     <el-table :data="list" style="100%" border>
       <el-table-column
@@ -34,7 +34,7 @@
             type="warning"
             size="small"
             icon="el-icon-edit"
-            @click="handelClickEditOrAdd(false,row)"
+            @click="handelClickEditOrAdd(false, row)"
           >编辑</el-button>
           <el-button
             type="danger"
@@ -61,7 +61,7 @@
       :visible.sync="dialogFormVisible"
       align="center"
     >
-      <el-form :model="brand" style="width:80%">
+      <el-form ref="brand" :model="brand" style="width: 80%" :rules="rules">
         <el-form-item label="品牌名称" label-width="100px">
           <el-input v-model="brand.tmName" autocomplete="off" />
         </el-form-item>
@@ -87,7 +87,12 @@
 </template>
 
 <script>
-import { reqBrandGetList, reqBrandDeleteById, reqBrandCreate, reqBrandEdit } from '@/api/product'
+import {
+  reqBrandGetList,
+  reqBrandDeleteById,
+  reqBrandCreate,
+  reqBrandEdit
+} from '@/api/product'
 export default {
   name: 'Brand',
   data() {
@@ -102,6 +107,18 @@ export default {
         id: '',
         logoUrl: '',
         tmName: ''
+      },
+      rules: {
+        tmName: [
+          { required: true, message: '请输入品牌名称', trigger: 'blur' },
+          {
+            min: 2,
+            max: 10,
+            message: '长度在 2 到 10 个字符',
+            trigger: 'change'
+          }
+        ],
+        logoUrl: [{ required: true, message: '请上传品牌 logo' }]
       },
       uploadPath: 'http://39.98.123.211/admin/product/upload'
     }
@@ -164,23 +181,20 @@ export default {
       }
     },
     // 新增、编辑点击提交
-    async handleClickSubmit() {
+    handleClickSubmit() {
       const { brand, isAdd } = this
       let result = { code: '' }
-      if (brand.logoUrl && brand.tmName) {
-        if (isAdd) {
-          result = await reqBrandCreate(brand)
-        } else {
-          if (brand.id) {
-            result = await reqBrandEdit(brand)
+      this.$refs['brand'].validate(async(valid) => {
+        if (valid) {
+          if (isAdd) {
+            result = await reqBrandCreate(brand)
+          } else {
+            if (brand.id) {
+              result = await reqBrandEdit(brand)
+            }
           }
         }
-      } else {
-        this.$message({
-          message: '请填写品牌名称、上传品牌logo',
-          type: 'warning'
-        })
-      }
+      })
       if (result.code === 200) {
         this.$message({
           message: '操作成功',
@@ -216,29 +230,29 @@ export default {
 
 <style>
 /* 上传组件的样式 */
-  .avatar-uploader .el-upload {
-    border: 1px dashed #d9d9d9;
-    border-radius: 6px;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-  .avatar-uploader .el-upload:hover {
-    border-color: #409EFF;
-  }
-  .avatar-uploader-icon {
-    font-size: 28px;
-    color: #8c939d;
-    width: 178px;
-    height: 178px;
-    line-height: 178px;
-    text-align: center;
-  }
-  .avatar {
-    width: 178px;
-    height: 178px;
-    display: block;
-  }
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+  border-color: #409eff;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+}
 </style>
 
 <style lang='scss' scoped>
