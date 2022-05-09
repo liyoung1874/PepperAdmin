@@ -1,2 +1,16 @@
-# PepperAdmin
-A admin system build based on Vue 2 and Vue-admin-template.
+# 简介
+一个模范京东pc主页的前端项目，基于 vue 框架开发，业务逻辑包括商品的搜索，筛选，排序，加入购物车，支付，订单等。
+
+# 安装（本地）
+` git clone `
+
+` npm i `
+
+# 启动
+` npm start `
+
+# 在线 [查看]（39.105.14.10）
+项目属于阿里云上
+
+# 相关说明
+API接口来自于互联网，由于种种原因，不能保证可用性。
